@@ -1,0 +1,13 @@
+{% extends "events/base.html" %}
+
+{% block content %}
+    <div class="span4">
+        <div class="events">
+            <h2><a href="#">Events</a></h2>
+            <div class="events-calendar">
+                {{ calendar|safe }}
+            </div>
+            <div class="events-outline"></div>
+        </div>
+    </div>
+{% endblock %}

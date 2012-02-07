@@ -1,4 +1,8 @@
-from datetime import datetime
+from datetime import datetime, date
+import calendar
+from itertools import groupby
+
+from django.utils.html import conditional_escape as esc
 
 from django.db import models
 
@@ -13,12 +17,13 @@ from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
 
 from django.contrib.sitemaps import ping_google
-
-from metadata.models import DateAbstractBase, \
-                            TitleAbstractBase, \
-                            SlugAbstractBase
+from apps.core.widgets import LocationField
 
 from sorl.thumbnail import ImageField
+
+from django.core.urlresolvers import reverse
+
+from .managers import EventManager
 
 class Location(models.Model):
     class Meta:
@@ -31,12 +36,15 @@ class Location(models.Model):
         
     title = models.CharField(_('title'), max_length=255)
     slug = models.SlugField(_('slug'), db_index=True)
-    
+    location = LocationField(blank=True, max_length=255)
+
     address = models.CharField(_('address'), max_length=255, blank=True)
+
 
 class PublicationManager(CurrentSiteManager):
     def get_query_set(self):
         return super(CurrentSiteManager, self).get_query_set().filter(publish=True, publish_date__lte=datetime.now())
+
 
 class Event(models.Model):
     class Meta:
@@ -53,13 +61,13 @@ class Event(models.Model):
 
     @models.permalink                                               
     def get_absolute_url(self):
-        return ('agenda-detail', (), {
+        return ('events-detail', (), {
                   'year'  : self.event_date.year, 
                   'month' : self.event_date.month, 
                   'day'   : self.event_date.day, 
                   'slug'  : self.slug })
-        
-    objects = models.Manager()
+
+    objects = EventManager()
     on_site = CurrentSiteManager()
     published = PublicationManager()
 
@@ -102,6 +110,19 @@ class Event(models.Model):
                 import logging
                 logging.warn('Google ping on save did not work.')
 
+
+class TitleAbstractBase(models.Model):
+    """ Abstract base class adding a title field. """
+
+    class Meta:
+        abstract = True
+
+    def __unicode__(self):
+        return self.title
+
+    title = models.CharField(max_length=255, verbose_name=_('title'))
+
+
 class EventImage(TitleAbstractBase):
     """ Image related to an event. """
     
@@ -115,6 +136,7 @@ class EventFile(TitleAbstractBase):
     event = models.ForeignKey(Event)
     file = models.FileField(verbose_name=_('file'), upload_to='event_files')
 
+
 class Calendar(models.Model):
     name = models.CharField(_('name'), max_length=100, blank=True, null=True)
 
@@ -126,3 +148,38 @@ class Calendar(models.Model):
         if self.name:
             return self.name
         return _("Unnamed Calendar")
+
+
+class EventCalendar(calendar.HTMLCalendar):
+    """
+    Event calendar is a basic calendar made with HTMLCalendar module.
+    """
+
+    def __init__(self, events, *args, **kwargs):
+        self.events = self.group_by_day(events)
+        super(EventCalendar, self).__init__(*args, **kwargs)
+
+    def formatday(self, day, weekday):
+        if day != 0:
+            cssclass = self.cssclasses[weekday]
+            if date.today() == date(self.year, self.month, day):
+                cssclass += ' today'
+            if day in self.events:
+                cssclass += ' filled'
+                url = reverse('events-calendar', kwargs={'year': self.year, 'month': self.month, 'day': day})
+                return self.day_cell(cssclass, '<a href="%s" class="view_events">%d</a>' % (url, day))
+            return self.day_cell(cssclass, day)
+        return self.day_cell('noday', '&nbsp;')
+
+    def formatmonth(self, year, month):
+        self.year, self.month = year, month
+        return super(EventCalendar, self).formatmonth(year, month)
+
+    def group_by_day(self, events):
+        field = lambda event: event.event_date.day
+        return dict(
+            [(day, list(items)) for day, items in groupby(events, field)]
+        )
+
+    def day_cell(self, cssclass, body):
+        return '<td class="%s">%s</td>' % (cssclass, body)

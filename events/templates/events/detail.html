@@ -1,0 +1,25 @@
+{% extends "events/base.html" %}
+{% load comments %}
+
+{% block content %}
+    <div class="event-detail">
+        {% include "events/_event.html" %}
+        {% if event.allow_comments %}
+            {% get_comment_list for event as comment_list %}
+            {% if comment_list %}
+                <h3>Comments</h3>
+                <div>
+                    {% for comment in comment_list %}
+                        <p>{{ comment }}</p>
+                    {% endfor %}
+                    <br />
+                </div>
+            {% endif %}
+            <h3>Leave comment</h3>
+            <div>
+                <p>{% render_comment_form for event %}</p>
+                <br />
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

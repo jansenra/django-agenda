@@ -1,0 +1,24 @@
+{% extends "agenda/base.html" %}
+
+{% block content %}
+    <div class="events">
+        <h1>
+            {% if day %}
+                {{ day|date:"F j, Y" }}
+            {% else %}
+                {% if month %}
+                    {{ month|date:"F Y" }}
+                {% else %}
+                    {% if year %}
+                        {{ year }}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </h1>
+        {% for event in events %}
+            <div>
+                {% include "events/_event.html" %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

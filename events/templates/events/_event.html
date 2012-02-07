@@ -1,0 +1,10 @@
+<h3>
+    <a href="{% url events-detail year=event.event_date.year month=event.event_date.month day=event.event_date.day slug=event.slug %}">{{ event.title }}</a>
+    <span>on {{ event.event_date|date:"D d M" }}{% if event.start_time %} {{ event.start_time|time:"G:i" }}{% if event.end_time %} - {{ event.end_time|time:"G:i" }}{% endif %}{% endif %}</span>
+</h3>
+<div>
+    <div>
+        {{ event.description|safe }}
+        <br />
+    </div>
+</div>
