@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _
 
 from models import *
 
@@ -61,12 +62,12 @@ class MediaAdminMixin(object):
 
 
 class EventImageInline(AdminInlineImageMixin, admin.TabularInline):
-    model = Image
+    model = EventImage
     extra = 1
 
 
 class EventFileInline(admin.TabularInline):
-    model = File
+    model = EventFile
     extra = 1
 
 
@@ -83,19 +84,19 @@ class EventAdmin(MediaAdminMixin, ExtendibleModelAdminMixin, admin.ModelAdmin):
     list_display = ('title', 'created_by', 'start_date', 'start_time', 'end_date', 'end_time', 'location', 'publish',
                     'calendar')
     list_display_links = ('title', )
-    list_filter = ('start_date', 'publish', 'author', 'location', 'calendar')
+    list_filter = ('start_date', 'publish', 'created_by', 'location', 'calendar')
 
     date_hierarchy = 'start_date'
     
     prepopulated_fields = {"slug": ("title",)}
     
-    search_fields = ('title', 'location__title', 'author__username', 'author__first_name', 'author__last_name',
-                     'calendar')
+    search_fields = ('title', 'location__title', 'created_by__username', 'created_by__first_name',
+                     'created_by__last_name', 'calendar')
 
     fieldsets =  ((None, {'fields': ['title', 'slug', 'start_date', 'start_time', 'end_date', 'end_time',
                                      'location', 'image', 'description', 'calendar',]}),
                   (_('Advanced options'), {'classes' : ('collapse',),
-                                           'fields'  : ('publish_date', 'publish', 'author', 'allow_comments')}))
+                                           'fields'  : ('publish_date', 'publish', 'created_by', 'allow_comments')}))
     
     def get_urls(self):
         urls = super(EventAdmin, self).get_urls()
