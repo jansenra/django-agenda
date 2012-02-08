@@ -23,32 +23,25 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('slug', self.gf('django.db.models.fields.SlugField')(max_length=50, db_index=True)),
-            ('event_date', self.gf('django.db.models.fields.DateField')()),
+            ('start_date', self.gf('django.db.models.fields.DateField')()),
             ('start_time', self.gf('django.db.models.fields.TimeField')(null=True, blank=True)),
+            ('end_date', self.gf('django.db.models.fields.DateField')()),
             ('end_time', self.gf('django.db.models.fields.TimeField')(null=True, blank=True)),
             ('location', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['events.Location'], null=True, blank=True)),
             ('image', self.gf('sorl.thumbnail.fields.ImageField')(max_length=100, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')()),
+            ('description', self.gf('tinymce.models.HTMLField')()),
             ('calendar', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='events', null=True, to=orm['events.Calendar'])),
             ('add_date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('mod_date', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('author', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, blank=True)),
-            ('publish_date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2012, 2, 7, 13, 54, 26, 388579))),
+            ('created_by', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, blank=True)),
+            ('publish_date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2012, 2, 8, 11, 39, 58, 387430))),
             ('publish', self.gf('django.db.models.fields.BooleanField')(default=True)),
             ('allow_comments', self.gf('django.db.models.fields.BooleanField')(default=True)),
         ))
         db.send_create_signal('events', ['Event'])
 
-        # Adding unique constraint on 'Event', fields ['event_date', 'slug']
-        db.create_unique('events_event', ['event_date', 'slug'])
-
-        # Adding M2M table for field sites on 'Event'
-        db.create_table('events_event_sites', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('event', models.ForeignKey(orm['events.event'], null=False)),
-            ('site', models.ForeignKey(orm['sites.site'], null=False))
-        ))
-        db.create_unique('events_event_sites', ['event_id', 'site_id'])
+        # Adding unique constraint on 'Event', fields ['start_date', 'slug']
+        db.create_unique('events_event', ['start_date', 'slug'])
 
         # Adding model 'EventImage'
         db.create_table('events_eventimage', (
@@ -71,24 +64,21 @@ class Migration(SchemaMigration):
         # Adding model 'Calendar'
         db.create_table('events_calendar', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=100, null=True, blank=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=100)),
         ))
         db.send_create_signal('events', ['Calendar'])
 
 
     def backwards(self, orm):
         
-        # Removing unique constraint on 'Event', fields ['event_date', 'slug']
-        db.delete_unique('events_event', ['event_date', 'slug'])
+        # Removing unique constraint on 'Event', fields ['start_date', 'slug']
+        db.delete_unique('events_event', ['start_date', 'slug'])
 
         # Deleting model 'Location'
         db.delete_table('events_location')
 
         # Deleting model 'Event'
         db.delete_table('events_event')
-
-        # Removing M2M table for field sites on 'Event'
-        db.delete_table('events_event_sites')
 
         # Deleting model 'EventImage'
         db.delete_table('events_eventimage')
@@ -140,25 +130,25 @@ class Migration(SchemaMigration):
         'events.calendar': {
             'Meta': {'object_name': 'Calendar'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'})
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
         'events.event': {
-            'Meta': {'ordering': "['-event_date', '-start_time', '-title']", 'unique_together': "(('event_date', 'slug'),)", 'object_name': 'Event'},
+            'Meta': {'ordering': "['-start_date', '-start_time', '-title']", 'unique_together': "(('start_date', 'slug'),)", 'object_name': 'Event'},
             'add_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'allow_comments': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'author': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'blank': 'True'}),
             'calendar': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'events'", 'null': 'True', 'to': "orm['events.Calendar']"}),
-            'description': ('django.db.models.fields.TextField', [], {}),
+            'created_by': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'blank': 'True'}),
+            'description': ('tinymce.models.HTMLField', [], {}),
+            'end_date': ('django.db.models.fields.DateField', [], {}),
             'end_time': ('django.db.models.fields.TimeField', [], {'null': 'True', 'blank': 'True'}),
-            'event_date': ('django.db.models.fields.DateField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'image': ('sorl.thumbnail.fields.ImageField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'location': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['events.Location']", 'null': 'True', 'blank': 'True'}),
             'mod_date': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'publish': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'publish_date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2012, 2, 7, 13, 54, 26, 388579)'}),
-            'sites': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['sites.Site']", 'symmetrical': 'False'}),
+            'publish_date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2012, 2, 8, 11, 39, 58, 387430)'}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
+            'start_date': ('django.db.models.fields.DateField', [], {}),
             'start_time': ('django.db.models.fields.TimeField', [], {'null': 'True', 'blank': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
@@ -183,12 +173,6 @@ class Migration(SchemaMigration):
             'location': ('apps.core.widgets.LocationField', [], {'max_length': '255', 'blank': 'True'}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
             'title': ('django.db.models.fields.CharField', [], {'max_length': '255'})
-        },
-        'sites.site': {
-            'Meta': {'ordering': "('domain',)", 'object_name': 'Site', 'db_table': "'django_site'"},
-            'domain': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         }
     }
 
