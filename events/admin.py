@@ -1,7 +1,5 @@
 from django.conf.urls.defaults import patterns, url
 from django.contrib import admin
-from django.core.urlresolvers import reverse
-from django.utils.translation import ugettext as _
 
 from models import *
 
@@ -10,7 +8,6 @@ from sorl.thumbnail import get_thumbnail
 
 from utils import ExtendibleModelAdminMixin
 
-from tinymce.widgets import TinyMCE
 from tinymce.views import render_to_image_list, render_to_link_list
 
 class MediaAdminMixin(object):
@@ -63,31 +60,15 @@ class MediaAdminMixin(object):
         return render_to_link_list(link_list)
 
 
-class TinyMCEAdminMixin(object):
-    @staticmethod
-    def get_tinymce_widget(obj=None):
-        """ Return the appropriate TinyMCE widget. """
-
-        link_list_url = None
-        if obj:
-            link_list_url = reverse('admin:agenda_event_link_list', args=(obj.pk, ))
-            image_list_url = reverse('admin:agenda_event_image_list',\
-                                     args=(obj.pk, ))
-            return \
-               TinyMCE(mce_attrs={'external_image_list_url': image_list_url,
-                                  'external_link_list_url': link_list_url})
-        else:
-            return \
-               TinyMCE(mce_attrs={'external_link_list_url': link_list_url})
-
 class EventImageInline(AdminInlineImageMixin, admin.TabularInline):
-    model = EventImage
+    model = Image
     extra = 1
 
 
 class EventFileInline(admin.TabularInline):
-    model = EventFile
+    model = File
     extra = 1
+
 
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('title', )
@@ -96,40 +77,26 @@ class LocationAdmin(admin.ModelAdmin):
     
 admin.site.register(Location, LocationAdmin)
 
-class EventAdmin(TinyMCEAdminMixin, MediaAdminMixin, ExtendibleModelAdminMixin, admin.ModelAdmin):
-    inlines = (EventImageInline, EventFileInline)
-    list_display = ('title', 'author', 'event_date', 'start_time', 'location', 'publish', 'calendar')
-    list_display_links = ('title', )
-    list_filter = ('event_date', 'publish', 'author', 'location', 'calendar')
 
-    date_hierarchy = 'event_date'
+class EventAdmin(MediaAdminMixin, ExtendibleModelAdminMixin, admin.ModelAdmin):
+    inlines = (EventImageInline, EventFileInline)
+    list_display = ('title', 'created_by', 'start_date', 'start_time', 'end_date', 'end_time', 'location', 'publish',
+                    'calendar')
+    list_display_links = ('title', )
+    list_filter = ('start_date', 'publish', 'author', 'location', 'calendar')
+
+    date_hierarchy = 'start_date'
     
     prepopulated_fields = {"slug": ("title",)}
     
-    search_fields = ('title', 'location__title', 'author__username', 'author__first_name', 'author__last_name', 'calendar')        
+    search_fields = ('title', 'location__title', 'author__username', 'author__first_name', 'author__last_name',
+                     'calendar')
 
-    fieldsets =  ((None, {'fields': ['title', 'slug', 'event_date', 'start_time', 'end_time', 'location', 'image', 'description', 'calendar',]}),
+    fieldsets =  ((None, {'fields': ['title', 'slug', 'start_date', 'start_time', 'end_date', 'end_time',
+                                     'location', 'image', 'description', 'calendar',]}),
                   (_('Advanced options'), {'classes' : ('collapse',),
-                                           'fields'  : ('publish_date', 'publish', 'sites', 'author', 'allow_comments')}))
+                                           'fields'  : ('publish_date', 'publish', 'author', 'allow_comments')}))
     
-    # This is a dirty hack, this belongs inside of the model but defaults don't work on M2M
-    def formfield_for_dbfield(self, db_field, **kwargs):
-        """ Makes sure that by default all sites are selected. """
-        if db_field.name == 'sites': # Check if it's the one you want
-            kwargs.update({'initial': Site.objects.all()})
-         
-        return super(EventAdmin, self).formfield_for_dbfield(db_field, **kwargs)
-
-    def get_form(self, request, obj=None, **kwargs):
-        """ Override the form widget for the content field with a TinyMCE
-            field which uses a dynamically assigned image list. """
-
-        form = super(TinyMCEAdminMixin, self).get_form(request, obj=None, **kwargs)
-        
-        form.base_fields['description'].widget = self.get_tinymce_widget(obj)
-
-        return form
-
     def get_urls(self):
         urls = super(EventAdmin, self).get_urls()
         
