@@ -5,8 +5,10 @@ from django.views.generic.list import ListView
 
 from .models import Event, EventCalendar
 
+from apps.replies.views import ReplyMixin
 
-class Detail(DetailView):
+
+class Detail(DetailView, ReplyMixin):
     model = Event
     template_name = "events/detail.html"
     context_object_name = "event"
@@ -14,6 +16,11 @@ class Detail(DetailView):
     def get_queryset(self):
         return Event.objects.get_by_date(year=self.kwargs['year'], month=self.kwargs['month'], day=self.kwargs['day'])\
             .filter(slug__contains=self.kwargs['slug'])
+
+    def get_context_data(self, **kwargs):
+        context = super(Detail, self).get_context_data(**kwargs)
+        context['form'] = self.get_form(self.get_form_class())
+        return context
 
 
 class ArchiveMixin(object):
