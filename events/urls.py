@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import patterns, url
 
-from .views import Detail, Year, Month, Day, Index, Calendar
+from .views import Detail, Year, Month, Day, Index, Calendar, RsvpCreate
 
 urlpatterns = patterns('',
     url(r'^(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<slug>[-\w]+)/$',
@@ -20,6 +20,8 @@ urlpatterns = patterns('',
 
     url(r'^calendar/(?P<year>\d{4})/(?P<month>\d{1,2})/(?P<day>\d{1,2})/$',
         Calendar.as_view(), name='events-calendar'),
+
+    url(r'^rsvp/$', RsvpCreate.as_view(), name='events-rsvp-create'),
 
 )
 
