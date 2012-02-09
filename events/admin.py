@@ -94,7 +94,7 @@ class EventAdmin(MediaAdminMixin, ExtendibleModelAdminMixin, admin.ModelAdmin):
                      'created_by__last_name', 'calendar')
 
     fieldsets =  ((None, {'fields': ['title', 'slug', 'start_date', 'start_time', 'end_date', 'end_time',
-                                     'location', 'image', 'description', 'calendar',]}),
+                                     'location', 'image', 'short_description', 'description', 'calendar',]}),
                   (_('Advanced options'), {'classes' : ('collapse',),
                                            'fields'  : ('publish_date', 'publish', 'created_by', 'allow_comments')}))
     
@@ -111,7 +111,7 @@ class EventAdmin(MediaAdminMixin, ExtendibleModelAdminMixin, admin.ModelAdmin):
         )
 
         return my_urls + urls
-    
+
 admin.site.register(Event, EventAdmin)
 
 admin.site.register(Calendar)

@@ -1,9 +1,6 @@
-from datetime import datetime, date
-import calendar
-from itertools import groupby
+from datetime import datetime
 
 from django.db import models
-from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext
 from django.conf import settings
@@ -53,6 +50,9 @@ class Event(models.Model):
                   'day'   : self.start_date.day,
                   'slug'  : self.slug })
 
+    def get_picture(self):
+        return self.image or 'default_comment.jpg'
+
     objects = EventManager()
 
     # Core fields
@@ -69,6 +69,7 @@ class Event(models.Model):
 
     image = ImageField(verbose_name=_('image'), upload_to='event_images', blank=True, null=True)
 
+    short_description = models.TextField(_('short description'), null=False, blank=False)
     description = HTMLField(_('description'))
 
     calendar = models.ForeignKey("Calendar", blank=True, null=True, related_name='events')
@@ -92,6 +93,23 @@ class Event(models.Model):
             except Exception:
                 import logging
                 logging.warn('Google ping on save did not work.')
+
+
+class EventUsers(models.Model):
+
+    class Meta:
+        ordering = ['-created']
+
+    CHOICES = (
+        (_('no'), _('No')),
+        (_('maybe'), _('Maybe')),
+        (_('going'), _('Going')),
+    )
+
+    event = models.ForeignKey(Event, related_name="users")
+    user = models.ForeignKey(User, related_name="events")
+    rsvp = models.CharField(_('RSVP'), choices=CHOICES, blank=False, null=False, max_length=10)
+    created = models.DateTimeField(_('add date'),auto_now_add=True)
 
 
 class TitleAbstractBase(models.Model):
@@ -128,36 +146,3 @@ class Calendar(models.Model):
         if self.name:
             return self.name
 
-
-class EventCalendar(calendar.HTMLCalendar):
-    """
-    Event calendar is a basic calendar made with HTMLCalendar module.
-    """
-    def __init__(self, events, *args, **kwargs):
-        self.events = self.group_by_day(events)
-        super(EventCalendar, self).__init__(*args, **kwargs)
-
-    def formatday(self, day, weekday):
-        if day != 0:
-            cssclass = self.cssclasses[weekday]
-            if date.today() == date(self.year, self.month, day):
-                cssclass += ' today'
-            if day in self.events:
-                cssclass += ' filled'
-                url = reverse('events-calendar', kwargs={'year': self.year, 'month': self.month, 'day': day})
-                return self.day_cell(cssclass, '<a href="%s" class="view_events">%d</a>' % (url, day))
-            return self.day_cell(cssclass, day)
-        return self.day_cell('noday', '&nbsp;')
-
-    def formatmonth(self, year, month):
-        self.year, self.month = year, month
-        return super(EventCalendar, self).formatmonth(year, month)
-
-    def group_by_day(self, events):
-        field = lambda event: event.start_date.day
-        return dict(
-            [(day, list(items)) for day, items in groupby(events, field)]
-        )
-
-    def day_cell(self, cssclass, body):
-        return '<td class="%s">%s</td>' % (cssclass, body)
