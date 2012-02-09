@@ -1,12 +1,26 @@
 {% extends "events/base.html" %}
 
+{% block page_class %}events{% endblock %}
+
 {% block content %}
-    <div class="events">
-        <h1>UPCOMING EVENTS</h1>
-        {% for event in events %}
-            <div>
-                {% include "events/_event.html" %}
+    <div class="row">
+        <div class="span8">
+            <div class="events listing">
+                <h1>Upcoming events</h1>
+                {% for event in events %}
+                    {% include "events/_event_row.html" %}
+                {% endfor %}
             </div>
-        {% endfor %}
+        </div>
+        <div class="sidebar span4">
+            <div>
+                <h2>Events this month</h2>
+                {{ calendar_this_month|safe }}
+            </div>
+            <div>
+                <h2>Events next month</h2>
+                {{ calendar_next_month|safe }}
+            </div>
+        </div>
     </div>
 {% endblock %}
