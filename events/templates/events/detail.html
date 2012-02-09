@@ -1,11 +1,91 @@
 {% extends "events/base.html" %}
-{% load comments %}
+{% load comments sekizai_tags thumbnail %}
+
+{% block page_class %}events detail-page{% endblock %}
 
 {% block content %}
-    <div class="event-detail">
-        {% include "events/_event.html" %}
-        {% if event.allow_comments %}
-            {% include "_comments.html" with object=event %}
-        {% endif %}
+    {% addtoblock 'js' %}
+        <script src="{{ STATIC_URL }}events/js/functions.js"></script>
+    {% endaddtoblock %}
+    <div class="row">
+        <div class="span9 main listing">
+            <div class="event-detail">
+                <h1>{{ event.title }}</h1>
+                <p class="meta">Added on {{event.add_date}} by {{ event.created_by.email }}</p>
+                <div class="event-date">
+                    Event date:
+                    <span class="event-date">
+                        {% if event.end_date and event.end_date != event.start_date %}
+                            from {{ event.start_date }} to {{ event.end_date }}
+                        {% else %}
+                            On {{ event.start_date }}
+                        {% endif %}
+                    </span>
+                    {% if event.start_time %}
+                        <span class="event-time">
+                             {{ event.start_time|time:"G:i" }}{% if event.end_time %} until {{ event.end_time|time:"G:i" }}{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="event-location">
+                    <span class="event-location-title">Location: {{ event.location.title }}</span><br/>
+                    {% if event.location.address %}
+                        <span class="event-location-address">Address: {{ event.location.address }}</span><br/>
+                    {% endif %}
+                    <span class="event-location-location">Map: {{ event.location.location }}</span><br/>
+                </div>
+                <div class="event-short-description">{{ event.short_description }}</div>
+                <div class="event-description">{{ event.description|safe }}</div>
+
+                <div class="activity">
+                    {% get_comment_count for event as comment_count %}
+                    <a href="#" class="num_comments"><span class="num">{{ comment_count }}</span> <span class="type">comments</span></a>
+                    {% if request.user.is_authenticated %}
+                        {% if user_rsvp == 'No' %}
+                            <a href="#" class="rsvp" rsvp="remove">Remove from my agenda</a>
+                        {% else %}
+                            {% if user_rsvp == '' %}
+                                <a href="#" class="rsvp" rsvp="no">Add to my agenda</a>
+                            {% endif %}
+                        {% endif %}
+                        <a href="#" class="rsvp{% if user_rsvp == 'going' %} going{% endif %}" rsvp="going">I'm going</a>
+                        <a href="#" class="rsvp{% if user_rsvp == 'maybe' %} maybe{% endif %}" rsvp="maybe">Maybe</a>
+                    {% endif %}
+                </div>
+                <form style="display:none" action="{% url events-rsvp-create %}" method="POST" id="rsvp_form">
+                    {% csrf_token %}
+                    <input type="hidden" name="event_id" value="{{ event.id }}" />
+                    <input type="hidden" name="rsvp" value="" />
+                </form>
+                {% if event.allow_comments %}
+                {% include "_comments.html" with object=event %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="span3 sidebar">
+            <div>
+                <h2>Attendees</h2>
+                {% for attendee in attendees %}
+                <div class="row">
+                    <div class="span1">
+                        <ul class="media-grid">
+                            <li>
+                                <a href="{{ MEDIA_URL }}{{ attendee.user.profile.get_picture }}" data-lightbox="lightbox" title="{{ attendee.user.profile.get_full_name }}">
+                                    {% thumbnail attendee.user.profile.get_picture "30" as im %}
+                                    <img class="thumbnail" src="{{ im.url }}" style="width:{{ im.width }};height:{{ im.height }};" alt="attending" />
+                                    {% endthumbnail %}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="span2">
+                        {{ attendee.user.profile.get_full_name }}
+                    </div>
+                </div>
+                {% empty %}
+                No attendees yet
+                {% endfor %}
+            </div>
+        </div>
     </div>
 {% endblock %}
