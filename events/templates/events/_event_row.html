@@ -1,0 +1,20 @@
+{% load thumbnail comments humanize %}
+
+<div class="big item">
+    <h2>
+        <a href="{{ event.get_absolute_url }}">{{ event.title }}</a>
+        <span>on {{ event.start_date|date:"D d M" }}{% if event.start_time %} {{ event.start_time|time:"G:i" }}{% if event.end_time %} - {{ event.end_time|time:"G:i" }}{% endif %}{% endif %}</span>
+    </h2>
+    <ul class="media-grid pull-left">
+        <li>
+            <a href="{{ article.get_absolute_url }}">
+                {% thumbnail event.get_picture "60x60" crop="center" as im %}
+                <img src="{{ im.url }}" alt="{{ event.title }}" style="width:{{ im.width }};height:{{ im.height }};" />
+                {% endthumbnail %}
+            </a>
+        </li>
+    </ul>
+
+    <p>{{ event.short_description }} <a href="{{ event.get_absolute_url }}" class="read-more">Read more &raquo;</a></p>
+    {% include "events/_event_created.html" %}
+</div>
